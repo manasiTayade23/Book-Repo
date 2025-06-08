@@ -8,34 +8,16 @@ A RESTful API for a Book Review system built with Node.js, Express, and PostgreS
 - CRUD operations for books and reviews
 - Search functionality for books
 - Pagination for books and reviews
-- Role-based access control
-- Docker support for easy deployment
+- User-specific content management
+- TypeScript implementation
 
 ## Prerequisites
 
-- Node.js (v14 or higher)
+- Node.js (v18 or higher)
 - PostgreSQL (v12 or higher)
 - npm or yarn
-- Docker and Docker Compose (optional)
 
 ## Installation
-
-### Using Docker (Recommended)
-
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd book-review-api
-```
-
-2. Start the application using Docker Compose:
-```bash
-docker-compose up --build
-```
-
-The API will be available at http://localhost:3000, and PostgreSQL will be running on port 5432.
-
-### Manual Installation
 
 1. Clone the repository:
 ```bash
@@ -50,47 +32,16 @@ npm install
 
 3. Create a PostgreSQL database and update the `.env` file in the root directory with your database configuration:
 ```env
-PORT=3000
+PORT=7000
 DATABASE_URL=postgres://postgres:postgres@localhost:5432/book_review_api
 JWT_SECRET=your_jwt_secret_key
 JWT_EXPIRE=24h
 ```
 
-4. Start the server:
+4. Build and start the server:
 ```bash
+npm run build
 npm start
-```
-
-## Docker Commands
-
-### Start the application
-```bash
-docker-compose up
-```
-
-### Start in detached mode
-```bash
-docker-compose up -d
-```
-
-### Stop the application
-```bash
-docker-compose down
-```
-
-### View logs
-```bash
-docker-compose logs -f
-```
-
-### Rebuild the application
-```bash
-docker-compose up --build
-```
-
-### Remove volumes (database data)
-```bash
-docker-compose down -v
 ```
 
 ## API Endpoints
@@ -137,6 +88,30 @@ Content-Type: application/json
 }
 ```
 
+#### Create multiple books (Protected)
+```http
+POST /api/books
+Authorization: Bearer <token>
+Content-Type: application/json
+
+[
+    {
+        "title": "The Hobbit",
+        "author": "J.R.R. Tolkien",
+        "genre": "Fantasy",
+        "description": "A story about Bilbo Baggins' unexpected journey",
+        "publishedYear": 1937
+    },
+    {
+        "title": "1984",
+        "author": "George Orwell",
+        "genre": "Science Fiction",
+        "description": "A dystopian social science fiction novel",
+        "publishedYear": 1949
+    }
+]
+```
+
 #### Get all books (with pagination and filters)
 ```http
 GET /api/books?page=1&limit=10&author=Fitzgerald&genre=Fiction
@@ -144,12 +119,18 @@ GET /api/books?page=1&limit=10&author=Fitzgerald&genre=Fiction
 
 #### Get book by ID (with reviews)
 ```http
-GET /api/books/:id
+GET /api/books/:id?page=1&limit=10
 ```
 
 #### Search books
 ```http
-GET /api/search?query=gatsby
+GET /api/books/search?query=gatsby
+```
+
+#### Get user's content (Protected)
+```http
+GET /api/books/me/content?page=1&limit=10
+Authorization: Bearer <token>
 ```
 
 ### Reviews
@@ -230,14 +211,41 @@ CREATE TABLE reviews (
 );
 ```
 
-## Error Handling
+## Response Formats
 
-The API uses consistent error responses:
+### Success Response
+```json
+{
+    "success": true,
+    "data": {
+        // Response data here
+    }
+}
+```
 
+### Error Response
 ```json
 {
     "success": false,
     "message": "Error message here"
+}
+```
+
+### Pagination Response
+```json
+{
+    "success": true,
+    "pagination": {
+        "page": 1,
+        "limit": 10,
+        "totalItems": 50,
+        "totalPages": 5,
+        "hasNextPage": true,
+        "hasPrevPage": false
+    },
+    "data": [
+        // Array of items
+    ]
 }
 ```
 
@@ -249,18 +257,13 @@ The API uses JWT (JSON Web Tokens) for authentication. Protected routes require 
 Authorization: Bearer <token>
 ```
 
-## Rate Limiting
+## Design Decisions
 
-The API implements rate limiting to prevent abuse. Users are limited to 100 requests per hour.
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a new Pull Request
-
-## License
-
-This project is licensed under the MIT License.
+1. **TypeScript Implementation**: Chose TypeScript for better type safety and improved development experience.
+2. **PostgreSQL**: Selected for its robust support for complex queries and data integrity constraints.
+3. **JWT Authentication**: Implemented for stateless authentication and better scalability.
+4. **Modular Architecture**: Organized code into models, controllers, and routes for better maintainability.
+5. **Pagination**: Implemented for all list endpoints to handle large datasets efficiently.
+6. **User Content Management**: Added dedicated endpoint for users to manage their reviews.
+7. **Bulk Operations**: Support for creating multiple books in a single request.
+8. **Data Validation**: Implemented comprehensive validation for all inputs using Sequelize validators.
